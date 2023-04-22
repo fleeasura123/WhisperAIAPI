@@ -42,32 +42,25 @@ g_app.post('/api/audio', upload.single('file'), async (req, res) => {
                 .save(filePath + '.mp3');
         });
 
-        const result = await new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             // Transcribe the recorded voice to LOCAL OpenAI Whisper, output to text
             const outdata = spawn("./WhisperAI/TranscribeCS.exe", [`${appDirectoryPath}/uploads/1.mp3`, "--model", `${appDirectoryPath}/WhisperAI/ggml-medium.bin`, "--language", "tl", "--no-timestamps", "--output-txt"]);
-
+            
             outdata.on('exit', () => {
-
-                // Read the output.txt file
-                fs.readFile(`${appDirectoryPath}/uploads/1.txt`, 'utf8', (err, data) => {
-                    if (err) {
-                        resolve('');
-                    }
-
-                    // Clean the text
-                    const dataString = data.replace(/(\r\n|\n|\r)/gm, "\n").replace(/\s\s+/g, ' ').trim();
-
-                    resolve(dataString);
-                });
-
-                fs.unlinkSync(`${appDirectoryPath}/uploads/1.txt`);
-
+                resolve();
             });
         });
 
+        // Read the output.txt file
+        const data = fs.readFileSync(`${appDirectoryPath}/uploads/1.txt`, {encoding:'utf8', flag:'r'});
+
+        const dataString = data.replace(/(\r\n|\n|\r)/gm, "\n").replace(/\s\s+/g, ' ').trim();
+
+        fs.unlinkSync(`${appDirectoryPath}/uploads/1.txt`);
+
         return res.json({
             success: true,
-            data: result
+            data: dataString
         });
     } catch (err) {
         return res.json({
